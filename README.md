@@ -11,28 +11,28 @@ The table below summarizes the hyperparameter search spaces, bound constraints, 
 
 | Model | Hyperparameter | Type | Lower | Upper | Classification Default | Regression Default |
 |:---|:---|:---|:---:|:---:|:---:|:---:|
-| **Elastic Net** () |  | numeric | zsh$ | $ | $ | $ |
-| |  | numeric | ^{-10}$ | ^{10}$ | zsh$ | zsh$ |
-| **Decision Tree** () |  | numeric | zsh$ | $ | zsh.1$ | zsh.1$ |
-| |  | integer | $ | $ | $ | $ |
-| |  | integer | $ | $ | $ | $ |
-| |  | integer | $ | $ | $ | $ |
-| **569XNN** () |  | integer | $ | $ | $ | $ |
-| **SVM** () |  | numeric | ^{-10}$ | ^{10}$ | $ | $ |
-| |  | numeric | ^{-10}$ | ^{10}$ | /p$ | /p$ |
-| **Random Forest** () |  | integer | $ | $ | $ | $ |
-| |  | numeric | zsh.1$ | $ | $ | $ |
-| |  | integer | $ | $ | $\lfloor\sqrt{p}floor$ | $\lfloor p/3floor$ |
-| |  | integer | $ | $ | $ | $ |
-| **XGBoost** () |  | categorical | --- | --- |  |  |
-| |  | integer | $ | $ | $ | $ |
-| |  | numeric | zsh$ | $ | zsh.3$ | zsh.3$ |
-| |  | numeric | zsh.1$ | $ | $ | $ |
-| |  | integer | $ | $ | $ | $ |
-| |  | numeric | $ | $ | $ | $ |
-| |  | numeric | zsh.01$ | $ | $ | $ |
-| |  | numeric | zsh.01$ | $ | $ | $ |
-| |  | numeric | ^{-10}$ | ^{10}$ | $ | $ |
-| |  | numeric | ^{-10}$ | ^{10}$ | zsh$ | zsh$ |
+| **Elastic Net** (`glmnet`) | `alpha` | numeric | 0 | 1 | 1 | 1 |
+| | `lambda` | numeric | 2^(-10) | 2^(10) | 0 | 0 |
+| **Decision Tree** (`rpart`) | `cp` | numeric | 0 | 1 | 0.1 | 0.1 |
+| | `maxdepth` | integer | 1 | 30 | 30 | 30 |
+| | `minbucket` | integer | 1 | 60 | 7 | 7 |
+| | `minsplit` | integer | 1 | 60 | 20 | 20 |
+| **k-NN** (`kknn`) | `k` | integer | 1 | 30 | 7 | 7 |
+| **SVM** (`e1071`) | `cost` | numeric | 2^(-10) | 2^(10) | 1 | 1 |
+| | `gamma` | numeric | 2^(-10) | 2^(10) | 1/p | 1/p |
+| **Random Forest** (`ranger`) | `num.trees` | integer | 1 | 2000 | 500 | 500 |
+| | `sample.fraction` | numeric | 0.1 | 1 | 1 | 1 |
+| | `mtry` | integer | 1 | p | floor(sqrt(p)) | floor(p/3) |
+| | `min.node.size` | integer | 1 | n | 1 | 5 |
+| **XGBoost** (`xgboost`) | `booster` | categorical | --- | --- | `gbtree` | `gbtree` |
+| | `nrounds` | integer | 1 | 5000 | 500 | 500 |
+| | `eta` | numeric | 0 | 1 | 0.3 | 0.3 |
+| | `subsample` | numeric | 0.1 | 1 | 1 | 1 |
+| | `max_depth` | integer | 1 | 15 | 6 | 6 |
+| | `min_child_weight` | numeric | 1 | 14 | 1 | 1 |
+| | `colsample_bytree` | numeric | 0.01 | 1 | 1 | 1 |
+| | `colsample_bylevel` | numeric | 0.01 | 1 | 1 | 1 |
+| | `lambda` | numeric | 2^(-10) | 2^(10) | 1 | 1 |
+| | `alpha` | numeric | 2^(-10) | 2^(10) | 0 | 0 |
 
-*$ denotes the number of features and $ denotes the number of observations. For Random Forest, the default  is $\max(1, \lfloor\sqrt{p}floor)$ in classification and $\max(1, \lfloor p/3floor)$ in regression, while  defaults to $ and $, respectively.*
+*p denotes the number of features and n denotes the number of observations. For Random Forest, the default `mtry` is max(1, floor(sqrt(p))) in classification and max(1, floor(p/3)) in regression, while `min.node.size` defaults to 1 and 5, respectively.*
