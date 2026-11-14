@@ -225,32 +225,36 @@ ui <- page_navbar(
   # Main Content Panels
   nav_panel(
     "Decision Support & Pareto Frontier",
+    # Top KPI Cards
+    uiOutput("kpi_summary_cards"),
+    
     layout_columns(
-      col_widths = c(12, 12, 12),
+      col_widths = c(7, 5),
       
-      # Top KPI Cards
-      uiOutput("kpi_summary_cards"),
-      
-      # Visualization
+      # Visualization Card
       card(
+        full_screen = TRUE,
         card_header(
-          class = "d-flex justify-content-between align-items-center",
-          span("Empirical Pareto Trade-off: Tunability vs. Predictive Multiplicity", class = "fw-bold"),
-          span(class = "badge bg-info text-dark", "Surrogate Evaluated")
+          class = "d-flex justify-content-between align-items-center bg-white border-bottom",
+          span("Empirical Pareto Trade-off: Tunability vs. Predictive Multiplicity", class = "fw-bold text-dark"),
+          span(class = "badge bg-primary text-white", "Surrogate Evaluated")
         ),
         card_body(
-          plotOutput("pareto_plot", height = "360px"),
-          p(class = "text-muted small mt-2",
-            "The curve illustrates the Pareto frontier across the hyperparameter grid evaluated by meta-surrogate models. ",
-            "The red star highlights the configuration selected for the current β tolerance.")
+          plotOutput("pareto_plot", height = "460px"),
+          div(
+            class = "text-muted small mt-2 d-flex justify-content-between",
+            span("Curvature shows diminishing performance returns relative to runaway churn."),
+            span("Red diamond: Selected configuration for β tolerance.")
+          )
         )
       ),
       
       # Safe Intervals & Guidelines
       card(
-        card_header("Safe Hyperparameter Tuning Intervals & Risk Diagnosis", class = "fw-bold"),
+        card_header(class = "fw-bold bg-white border-bottom text-dark", "Safe Tuning Intervals & Risk Audit"),
         card_body(
           uiOutput("diagnosis_box"),
+          hr(class = "my-2"),
           tableOutput("safe_intervals_table")
         )
       )
@@ -404,9 +408,9 @@ server <- function(input, output, session) {
     max_tun <- max(0.005, cat_entry$tunability)
     max_disc <- max(0.01, cat_entry$discrepancy)
     
-    t_seq <- seq(0, max_tun * 1.3, length.out = 100)
-    # Discrepancy generally scales non-linearly with tunability search depth
-    d_seq <- (t_seq / max(t_seq))^1.8 * (max_disc * 1.25)
+    t_seq <- seq(0, max_tun * 1.25, length.out = 150)
+    # Non-linear diminishing returns curve
+    d_seq <- (t_seq / max(t_seq))^1.6 * (max_disc * 1.2)
     
     pareto_df <- data.frame(Tunability = t_seq, Discrepancy = d_seq)
     
@@ -415,24 +419,50 @@ server <- function(input, output, session) {
     best_idx <- which.max(pareto_df$Score)
     chosen_pt <- pareto_df[best_idx, ]
     
+    # Label placement with dynamic offset to never clip
+    x_range <- range(pareto_df$Discrepancy)
+    y_range <- range(pareto_df$Tunability)
+    x_offset <- (x_range[2] - x_range[1]) * 0.04
+    y_offset <- (y_range[2] - y_range[1]) * 0.08
+    
+    lbl_x <- max(x_range[1] + x_offset, min(x_range[2] - x_offset * 2.5, chosen_pt$Discrepancy))
+    lbl_y <- min(y_range[2] - y_offset * 0.5, chosen_pt$Tunability + y_offset)
+    
     ggplot(pareto_df, aes(x = Discrepancy, y = Tunability)) +
-      geom_line(color = "#1E3D59", linewidth = 1.3) +
       geom_area(fill = "#1E3D59", alpha = 0.08) +
+      geom_line(color = "#1E3D59", linewidth = 1.4) +
       geom_point(data = chosen_pt, aes(x = Discrepancy, y = Tunability),
-                 color = "#E84A5F", size = 5, shape = 18) +
-      annotate("text", x = chosen_pt$Discrepancy, y = chosen_pt$Tunability + (max_tun * 0.07),
-               label = sprintf("Optimal for β = %.2f\n(Gain: +%.3f | Disc: %.3f)",
-                               st$beta, chosen_pt$Tunability, chosen_pt$Discrepancy),
-               color = "#E84A5F", fontface = "bold", size = 3.8) +
-      labs(
-        x = "Predictive Multiplicity (Prediction Discrepancy)",
-        y = "Tunability Gain over Default (ΔPerf)",
-        title = sprintf("%s (%s): Multiplicity-Aware Pareto Frontier", st$algo, st$task)
+                 color = "#D9534F", size = 6, shape = 18) +
+      annotate(
+        "label",
+        x = lbl_x,
+        y = lbl_y,
+        label = sprintf("Optimal Setting (β = %.2f)\nGain (ΔPerf): +%.3f\nDiscrepancy (Ξ̄): %.3f",
+                        st$beta, chosen_pt$Tunability, chosen_pt$Discrepancy),
+        color = "#900C3F",
+        fill = "#FFF0F2",
+        fontface = "bold",
+        size = 4.2,
+        label.padding = unit(0.45, "lines"),
+        label.r = unit(0.35, "lines"),
+        label.size = 0.4
       ) +
-      theme_minimal(base_size = 13) +
+      scale_x_continuous(expand = expansion(mult = c(0.04, 0.12))) +
+      scale_y_continuous(expand = expansion(mult = c(0.04, 0.15))) +
+      labs(
+        x = "Predictive Multiplicity (Prediction Discrepancy, Ξ̄)",
+        y = "Tunability Gain over Default (ΔPerf)",
+        title = sprintf("%s (%s): Multiplicity-Aware Pareto Frontier", st$algo, st$task),
+        subtitle = "Empirical trade-off frontier derived from surrogate models across benchmark corpora"
+      ) +
+      theme_minimal(base_size = 14) +
       theme(
+        plot.title = element_text(face = "bold", color = "#1E3D59", size = 15),
+        plot.subtitle = element_text(color = "gray40", size = 11, margin = margin(b = 10)),
+        axis.title.x = element_text(face = "bold", color = "#1E3D59", margin = margin(t = 8)),
+        axis.title.y = element_text(face = "bold", color = "#1E3D59", margin = margin(r = 8)),
         panel.grid.minor = element_blank(),
-        plot.title = element_text(face = "bold", color = "#1E3D59")
+        panel.grid.major = element_line(color = "gray92")
       )
   })
   
