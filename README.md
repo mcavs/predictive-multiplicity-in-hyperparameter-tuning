@@ -1,7 +1,19 @@
 # Predictive Multiplicity in Hyperparameter Tuning: A Unified Investigation of Tabular Classification and Regression
 
-This repository contains the replication code, experimental configurations, and analysis pipelines for the paper:
+This repository contains the replication code, experimental configurations, analysis pipelines, and the interactive decision-support application for the paper:
 > **Predictive Multiplicity in Hyperparameter Tuning: A Unified Investigation of Tabular Classification and Regression**
+
+---
+
+## 🌐 Interactive Online Decision Support Tool (`multiTune`)
+
+Explore the trade-offs between hyperparameter tunability and predictive multiplicity without local installation:
+👉 **[Launch multiTune Web App](https://mcavs.github.io/predictive-multiplicity-in-hyperparameter-tuning/)**
+
+Powered by WebAssembly via `shinylive` / `webR`, the application runs entirely client-side inside modern web browsers. It provides:
+- Empirical surrogate profiles across 6 algorithms and 76 tabular datasets.
+- Interactive Pareto frontier balancing tuning gain ($\Delta \mathrm{Perf}$) against individual prediction churn / discrepancy ($\bar{\Xi}$).
+- Algorithm-specific multiplicity risk scoring and recommended safe hyperparameter search boundaries.
 
 ---
 
